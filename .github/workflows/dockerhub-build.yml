@@ -11,11 +11,6 @@ jobs:
         permissions:
             packages: write
             contents: read
-        strategy:
-            matrix:
-                platform:
-                    - linux/amd64
-                    - linux/arm64
 
         steps:
             - name: Check out the repo
@@ -35,11 +30,11 @@ jobs:
 
             - name: Generate Docker tag
               id: tag
-              run: echo "tag=astrolabio1417/m3u8-proxy-impersonate:$(date +%Y%m%d%H%M)" >> "$GITHUB_OUTPUT"
+              run: echo "tag=${{ secrets.DOCKERHUB_USERNAME }}/m3u8-proxy-impersonate:$(date +%Y%m%d%H%M)" >> "$GITHUB_OUTPUT"
 
             - name: Build and push
               uses: docker/build-push-action@v6
               with:
                   push: true
-                  tags: ${{ steps.tag.outputs.tag }}, astrolabio1417/m3u8-proxy-impersonate:latest
-                  platforms: ${{ matrix.platform }}
+                  tags: ${{ steps.tag.outputs.tag }}, ${{ secrets.DOCKERHUB_USERNAME }}/m3u8-proxy-impersonate:latest
+                  platforms: linux/amd64,linux/arm64
