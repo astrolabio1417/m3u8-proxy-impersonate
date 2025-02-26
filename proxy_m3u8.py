@@ -43,8 +43,10 @@ def proxy_m3u8_text(text: str, url: str, custom_headers: dict = {}):
     return "\n".join(new_lines)
 
 
-def proxy_m3u8(url: str, custom_headers: dict = {}):
-    res = requests.get(url, impersonate="chrome", headers=custom_headers)
+def proxy_m3u8(url: str, custom_headers: dict = {}, cookies={}):
+    res = requests.get(
+        url, impersonate="chrome", headers=custom_headers, cookies=cookies
+    )
 
     if not res.ok:
         raise HTTPException(
