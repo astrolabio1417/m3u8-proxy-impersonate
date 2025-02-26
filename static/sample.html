@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>M3U8 Proxy</title>
+        <meta name="title" content="M3U8 Proxy" />
+        <meta name="description" content="Playground for testing m3u8 proxy." />
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+
+    <body
+        class="px-2 py-5 flex flex-col justify-center items-center w-full gap-5">
+        <h1>
+            M3U8 Video Proxy
+        </h1>
+        <div class="test flex flex-col flex-wrap gap-2 py-5 w-full max-w-xl">
+            <input class="border-2 px-2 h-12" type="url" id="url"
+                title="url"
+                placeholder="url" />
+
+            <input class="border-2 px-2 h-12" type="text" id="headers"
+                title="headers"
+                placeholder="headers" />
+
+            <button onclick="play()"
+                class="bg-blue-600 text-white rounded h-12">PLAY</button>
+            <button onclick="clearFields()"
+                class="bg-red-600 text-white rounded h-12">CLEAR</button>
+        </div>
+
+        <div id="result" class="max-w-xl overflow-y-scroll"></div>
+        <video class="aspect-video w-full max-w-xl" id="player"
+            controls></video>
+
+        <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+        <script type="text/javascript">
+            let hls;
+
+            function play() {
+                const url = document.getElementById("url").value;
+                const headers = document.getElementById("headers").value;
+
+                if (!url) return alert("Really?!!")
+
+                const proxiedUrl = new URL("/m3u8-proxy", window.location.origin)
+                proxiedUrl.searchParams.set("url", url)
+                proxiedUrl.searchParams.set("headers", headers || "{}")
+
+                const resultDiv = document.getElementById("result");
+                resultDiv.style.display = "block";
+                resultDiv.innerHTML = `<span class="result-label">PROXIED_URL: </span><a href="${proxiedUrl.toString()}" target="_blank">${proxiedUrl.toString()}</a>`;
+
+                const video = document.getElementById("player");
+
+                if (hls) {
+                    hls.destroy();
+                }
+
+                if (Hls.isSupported()) {
+                    hls = new Hls();
+                    hls.loadSource(proxiedUrl.toString());
+                    hls.attachMedia(video);
+                    hls.on(Hls.Events.MANIFEST_PARSED, function () {
+                        video.play();
+                    });
+                } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+                    video.src = proxiedUrl.toString();
+
+                    video.addEventListener("loadedmetadata", function () {
+                        video.play();
+                    });
+                }
+            }
+
+            function clearFields() {
+                document.getElementById("url").value = "";
+                document.getElementById("result").style.display = "none";
+                document.getElementById("result").innerHTML = "";
+                const video = document.getElementById("player");
+                if (hls) hls.destroy();
+                video.src = "";
+            }
+    </script>
+    </body>
+
+</html>
