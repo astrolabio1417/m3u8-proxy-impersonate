@@ -11,7 +11,7 @@ KEY_TEXT = "#EXT-X-KEY"
 URL_REGEX = re.compile(r"URI=\"(.*)\"")
 
 
-def proxy_m3u8_text(text: str, url: str, custom_headers: dict = {}):
+def proxy_m3u8_text(text: str, url: str, custom_headers: dict = {}, cookies: dict = {}):
     lines = filter(
         lambda x: x != "" and not x.startswith("EXT-X-MEDIA:TYPE=AUDIO"),
         text.split("\n"),
@@ -28,7 +28,7 @@ def proxy_m3u8_text(text: str, url: str, custom_headers: dict = {}):
             _proxy_url = (
                 M3U8_PROXY_PATH if line.startswith(SUBTITLES_TEXT) else TS_PROXY_PATH
             )
-            proxied_url = get_proxied_url(full_url, _proxy_url, custom_headers)
+            proxied_url = get_proxied_url(full_url, _proxy_url, custom_headers, cookies)
             new_lines.append(line.replace(uri, proxied_url))
             continue
 
@@ -37,7 +37,7 @@ def proxy_m3u8_text(text: str, url: str, custom_headers: dict = {}):
             continue
 
         full_url = line if line.startswith("http") else replace_last_segment(url, line)
-        proxied_url = get_proxied_url(full_url, url_path, custom_headers)
+        proxied_url = get_proxied_url(full_url, url_path, custom_headers, cookies)
         new_lines.append(proxied_url)
 
     return "\n".join(new_lines)

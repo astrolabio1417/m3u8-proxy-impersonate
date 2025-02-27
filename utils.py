@@ -3,12 +3,14 @@ from urllib.parse import quote, urlparse, parse_qs, urlencode
 from .configs import ALLOWED_ORIGINS, ALLOWED_ORIGINS_WO_SCHEME
 
 
-def get_proxied_url(url: str, proxy_url: str, headers: dict):
+def get_proxied_url(url: str, proxy_url: str, headers: dict = {}, cookies: dict = {}):
     proxy_url = urlparse(proxy_url)
     proxy_params = parse_qs({})
     proxy_params["url"] = url
     proxy_params["headers"] = quote(json.dumps(headers))
+    proxy_params["cookies"] = quote(json.dumps(cookies))
     proxy_url = proxy_url._replace(query=urlencode(proxy_params, doseq=True))
+
     return proxy_url.geturl()
 
 
