@@ -53,4 +53,4 @@ def proxy_m3u8(url: str, custom_headers: dict = {}, cookies={}):
             status_code=500, detail=f"Fetch failed with status {res.status_code}"
         )
 
-    return proxy_m3u8_text(res.text, url, custom_headers)
+    return proxy_m3u8_text(res.text, url, custom_headers, cookies)
