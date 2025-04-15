@@ -1,7 +1,4 @@
 from .configs import PROXY_LIST
-import logging
-
-logger = logging.getLogger("uvicorn.error")
 
 
 class ProxyRotator:
@@ -14,19 +11,18 @@ class ProxyRotator:
             return None
 
         proxy = self.proxies[self.index]
+        print("proxy: " + proxy)
         self.rotate()
         return proxy
 
     def rotate(self):
         self.index = self.index + 1 % len(self.proxies)
 
-    def get_httpx_proxies(self):
+    def get_proxies(self):
         proxy = self.get_proxy()
 
         if not proxy:
             return None
-
-        print("proxy: " + proxy)
 
         return {
             "http://": proxy,

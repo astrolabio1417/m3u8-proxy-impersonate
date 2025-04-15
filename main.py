@@ -52,7 +52,7 @@ async def serve_proxy_m3u8(request: Request):
     cookies = json.loads(unquote(query.get("cookies", "{}")))
 
     return Response(
-        proxy_m3u8(url, headers, cookies, proxies=proxy.get_httpx_proxies()),
+        proxy_m3u8(url, headers, cookies, proxy=proxy.get_proxy()),
         headers={
             "Content-Type": "application/vnd.apple.mpegurl",
             "Content-Disposition": f'attachment; filename="{get_filename_from_url(url)}"',
@@ -74,7 +74,7 @@ async def serve_proxy_ts(request: Request):
         impersonate="chrome",
         stream=True,
         cookies=cookies,
-        proxies=proxy.get_httpx_proxies(),
+        proxy=proxy.get_proxy(),
     )
 
     if not res.ok:
