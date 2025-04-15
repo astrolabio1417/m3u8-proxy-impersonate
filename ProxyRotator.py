@@ -16,7 +16,7 @@ class ProxyRotator:
         return proxy
 
     def rotate(self):
-        self.index = self.index + 1 % len(self.proxies)
+        self.index = (self.index + 1) % len(self.proxies)
 
     def get_proxies(self):
         proxy = self.get_proxy()
