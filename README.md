@@ -33,3 +33,16 @@ docker run -p 8989:8989 -e ALLOWED_ORIGINS="http://localhost:8989,http://localho
 ## Environment Variables
 
 -   `ALLOWED_ORIGINS`: Comma-separated list of allowed origins.
+-   `PROXY_LIST`: Comma-separated list of proxy.
+
+## Proxy List alternative to environment vars
+
+Filename: `proxies.txt`
+
+-   The file should contain one proxy entry per line:
+
+```plaintext
+192.168.1.100:8080
+192.168.1.101:3128
+192.168.1.102:9090
+```
