@@ -43,9 +43,18 @@ def proxy_m3u8_text(text: str, url: str, custom_headers: dict = {}, cookies: dic
     return "\n".join(new_lines)
 
 
-def proxy_m3u8(url: str, custom_headers: dict = {}, cookies={}):
+def proxy_m3u8(
+    url: str,
+    custom_headers: dict = {},
+    cookies={},
+    proxies: requests.ProxySpec | None = None,
+):
     res = requests.get(
-        url, impersonate="chrome", headers=custom_headers, cookies=cookies
+        url,
+        impersonate="chrome",
+        headers=custom_headers,
+        cookies=cookies,
+        proxies=proxies,
     )
 
     if not res.ok:

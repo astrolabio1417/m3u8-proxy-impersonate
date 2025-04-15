@@ -9,7 +9,7 @@ pip install -r requirements.txt
 To run:
 
 ```bash
-fastapi dev run
+fastapi run main.py
 ```
 
 ## Docker
@@ -27,7 +27,7 @@ docker build -t video-proxy-impersonate .
 To run the Docker container:
 
 ```bash
-docker run -p 8000:8000 -e ALLOWED_ORIGINS="http://localhost:8000,http://localhost" video-proxy-impersonate
+docker run -p 8989:8989 -e ALLOWED_ORIGINS="http://localhost:8989,http://localhost" video-proxy-impersonate
 ```
 
 ## Environment Variables

@@ -10,7 +10,7 @@ from .configs import (
 from urllib.parse import unquote
 from curl_cffi import requests
 from starlette.background import BackgroundTask
-
+from .ProxyRotator import proxy
 
 app = FastAPI()
 client = requests.AsyncSession()
@@ -52,7 +52,7 @@ async def serve_proxy_m3u8(request: Request):
     cookies = json.loads(unquote(query.get("cookies", "{}")))
 
     return Response(
-        proxy_m3u8(url, headers, cookies),
+        proxy_m3u8(url, headers, cookies, proxies=proxy.get_httpx_proxies()),
         headers={
             "Content-Type": "application/vnd.apple.mpegurl",
             "Content-Disposition": f'attachment; filename="{get_filename_from_url(url)}"',
@@ -69,7 +69,12 @@ async def serve_proxy_ts(request: Request):
 
     # https://www.python-httpx.org/async/
     res = await client.get(
-        url, headers=headers, impersonate="chrome", stream=True, cookies=cookies
+        url,
+        headers=headers,
+        impersonate="chrome",
+        stream=True,
+        cookies=cookies,
+        proxies=proxy.get_httpx_proxies(),
     )
 
     if not res.ok:
