@@ -32,6 +32,28 @@ def get_origin_from_allowed_origins(host: str):
         return None
 
 
+def filter_headers(headers: dict):
+    excluded_headers = {
+        "content-encoding",
+        "transfer-encoding",
+        "content-length",
+        "connection",
+        "cf-ray",
+        "cf-cache-status",
+        "server",
+        "alt-svc",
+        "Date",
+        "Vary",
+        "X-Cache",
+    }
+
+    for k in excluded_headers:
+        if headers.get(k):
+            headers.pop(k)
+
+    return headers
+
+
 if __name__ == "__main__":
     a = get_proxied_url(
         "https://google.com", "https://proxy.com", {"referer": "https://referer.com"}

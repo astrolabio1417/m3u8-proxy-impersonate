@@ -1,7 +1,11 @@
 import json
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse, Response, JSONResponse
-from .utils import get_filename_from_url, get_origin_from_allowed_origins
+from .utils import (
+    filter_headers,
+    get_filename_from_url,
+    get_origin_from_allowed_origins,
+)
 from .proxy_m3u8 import proxy_m3u8
 from .configs import (
     M3U8_PROXY_PATH,
@@ -72,6 +76,8 @@ async def serve_proxy_ts(request: Request):
         url, headers=headers, impersonate="chrome", stream=True, cookies=cookies
     )
 
+    filter_headers(res.headers)
+
     if not res.ok:
         res.aclose()
         raise HTTPException(
@@ -80,8 +86,6 @@ async def serve_proxy_ts(request: Request):
 
     return StreamingResponse(
         res.aiter_content(),
-        headers={
-            **res.headers,
-        },
+        headers={**res.headers},
         background=BackgroundTask(res.aclose),
     )
