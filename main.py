@@ -1,13 +1,13 @@
 import json
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse, Response, JSONResponse
-from .utils import (
+from utils import (
     filter_headers,
     get_filename_from_url,
     get_origin_from_allowed_origins,
 )
-from .proxy_m3u8 import proxy_m3u8
-from .configs import (
+from proxy_m3u8 import proxy_m3u8
+from configs import (
     M3U8_PROXY_PATH,
     TS_PROXY_PATH,
 )

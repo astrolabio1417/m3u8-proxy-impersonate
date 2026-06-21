@@ -1,6 +1,6 @@
 import json
 from urllib.parse import quote, urlparse, parse_qs, urlencode
-from .configs import ALLOWED_ORIGINS, ALLOWED_ORIGINS_WO_SCHEME
+from configs import ALLOWED_ORIGINS, ALLOWED_ORIGINS_WO_SCHEME
 
 
 def get_proxied_url(url: str, proxy_url: str, headers: dict = {}, cookies: dict = {}):

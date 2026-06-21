@@ -1,9 +1,9 @@
 import re
 
 from fastapi import HTTPException
-from .configs import M3U8_PROXY_PATH, TS_PROXY_PATH
+from configs import M3U8_PROXY_PATH, TS_PROXY_PATH
 from curl_cffi import requests
-from .utils import get_proxied_url, replace_last_segment
+from utils import get_proxied_url, replace_last_segment
 
 
 SUBTITLES_TEXT = "#EXT-X-MEDIA:TYPE=SUBTITLES"
