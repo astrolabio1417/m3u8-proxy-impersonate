@@ -13,6 +13,8 @@ URL_REGEX = re.compile(r"URI=\"(.*)\"")
 HTTP_PROXY = os.environ.get("HTTP_PROXY")
 HTTPS_PROXY = os.environ.get("HTTPS_PROXY")
 
+proxies = get_proxy_dict()
+
 def proxy_m3u8_text(text: str, url: str, custom_headers: dict = {}, cookies: dict = {}):
     lines = filter(
         lambda x: x != "" and not x.startswith("EXT-X-MEDIA:TYPE=AUDIO"),
