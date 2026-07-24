@@ -10,6 +10,8 @@ SUBTITLES_TEXT = "#EXT-X-MEDIA:TYPE=SUBTITLES"
 KEY_TEXT = "#EXT-X-KEY"
 URL_REGEX = re.compile(r"URI=\"(.*)\"")
 
+HTTP_PROXY = os.environ.get("HTTP_PROXY")
+HTTPS_PROXY = os.environ.get("HTTPS_PROXY")
 
 def proxy_m3u8_text(text: str, url: str, custom_headers: dict = {}, cookies: dict = {}):
     lines = filter(
@@ -45,7 +47,7 @@ def proxy_m3u8_text(text: str, url: str, custom_headers: dict = {}, cookies: dic
 
 def proxy_m3u8(url: str, custom_headers: dict = {}, cookies={}):
     res = requests.get(
-        url, impersonate="chrome", headers=custom_headers, cookies=cookies
+        url, impersonate="chrome", headers=custom_headers, cookies=cookies, proxies=proxies
     )
 
     if not res.ok:
@@ -54,3 +56,12 @@ def proxy_m3u8(url: str, custom_headers: dict = {}, cookies={}):
         )
 
     return proxy_m3u8_text(res.text, url, custom_headers, cookies)
+
+def get_proxy_dict():
+    """Build proxy dictionary from environment variables if available."""
+    proxies = {}
+    if HTTP_PROXY:
+        proxies["http"] = HTTP_PROXY
+    if HTTPS_PROXY:
+        proxies["https"] = HTTPS_PROXY
+    return proxies if proxies else None
