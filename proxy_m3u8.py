@@ -1,19 +1,20 @@
 import re
-
+import os
 from fastapi import HTTPException
 from configs import M3U8_PROXY_PATH, TS_PROXY_PATH
 from curl_cffi import requests
 from utils import get_proxied_url, replace_last_segment
 
-
 SUBTITLES_TEXT = "#EXT-X-MEDIA:TYPE=SUBTITLES"
 KEY_TEXT = "#EXT-X-KEY"
 URL_REGEX = re.compile(r"URI=\"(.*)\"")
 
-HTTP_PROXY = os.environ.get("HTTP_PROXY")
-HTTPS_PROXY = os.environ.get("HTTPS_PROXY")
+proxies = {
+    scheme: url
+    for scheme in ("http", "https")
+    if (url := os.environ.get(f"{scheme.upper()}_PROXY"))
+} or None
 
-proxies = get_proxy_dict()
 
 def proxy_m3u8_text(text: str, url: str, custom_headers: dict = {}, cookies: dict = {}):
     lines = filter(
@@ -49,7 +50,11 @@ def proxy_m3u8_text(text: str, url: str, custom_headers: dict = {}, cookies: dic
 
 def proxy_m3u8(url: str, custom_headers: dict = {}, cookies={}):
     res = requests.get(
-        url, impersonate="chrome", headers=custom_headers, cookies=cookies, proxies=proxies
+        url,
+        impersonate="chrome",
+        headers=custom_headers,
+        cookies=cookies,
+        proxies=proxies,
     )
 
     if not res.ok:
@@ -58,12 +63,3 @@ def proxy_m3u8(url: str, custom_headers: dict = {}, cookies={}):
         )
 
     return proxy_m3u8_text(res.text, url, custom_headers, cookies)
-
-def get_proxy_dict():
-    """Build proxy dictionary from environment variables if available."""
-    proxies = {}
-    if HTTP_PROXY:
-        proxies["http"] = HTTP_PROXY
-    if HTTPS_PROXY:
-        proxies["https"] = HTTPS_PROXY
-    return proxies if proxies else None

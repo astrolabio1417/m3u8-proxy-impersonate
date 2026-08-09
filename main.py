@@ -71,6 +71,10 @@ async def serve_proxy_ts(request: Request):
     headers = json.loads(unquote(query.get("headers", "{}")))
     cookies = json.loads(unquote(query.get("cookies", "{}")))
 
+    # forward Range so mp4/progressive files are seekable
+    if request.headers.get("range"):
+        headers.setdefault("Range", request.headers["range"])
+
     # https://www.python-httpx.org/async/
     res = await client.get(
         url, headers=headers, impersonate="chrome", stream=True, cookies=cookies
@@ -86,6 +90,7 @@ async def serve_proxy_ts(request: Request):
 
     return StreamingResponse(
         res.aiter_content(),
+        status_code=res.status_code,
         headers={**res.headers},
         background=BackgroundTask(res.aclose),
     )
