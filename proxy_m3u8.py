@@ -2,12 +2,13 @@ import re
 import os
 from fastapi import HTTPException
 from configs import M3U8_PROXY_PATH, TS_PROXY_PATH
+from urllib.parse import urljoin
 from curl_cffi import requests
-from utils import get_proxied_url, replace_last_segment
+from utils import get_proxied_url
 
-SUBTITLES_TEXT = "#EXT-X-MEDIA:TYPE=SUBTITLES"
+MEDIA_TEXT = "#EXT-X-MEDIA:"
 KEY_TEXT = "#EXT-X-KEY"
-URL_REGEX = re.compile(r"URI=\"(.*)\"")
+URL_REGEX = re.compile(r"URI=\"([^\"]*)\"")
 
 proxies = {
     scheme: url
@@ -17,21 +18,23 @@ proxies = {
 
 
 def proxy_m3u8_text(text: str, url: str, custom_headers: dict = {}, cookies: dict = {}):
-    lines = filter(
-        lambda x: x != "" and not x.startswith("EXT-X-MEDIA:TYPE=AUDIO"),
-        text.split("\n"),
-    )
+    lines = filter(None, text.splitlines())
     new_lines = []
     has_res = "RESOLUTION=" in text
     url_path = M3U8_PROXY_PATH if has_res else TS_PROXY_PATH
 
     for line in lines:
-        if line.startswith(SUBTITLES_TEXT) or line.startswith(KEY_TEXT):
+        if line.startswith(MEDIA_TEXT) or line.startswith(KEY_TEXT):
             match = re.search(URL_REGEX, line)
-            uri = match.group(1) if match else ""
-            full_url = uri if uri.startswith("http") else replace_last_segment(url, uri)
+            if not match:
+                new_lines.append(line)
+                continue
+
+            uri = match.group(1)
+            full_url = urljoin(url, uri)
+            # EXT-X-MEDIA URIs are playlists (subtitles/audio); EXT-X-KEY is a raw file
             _proxy_url = (
-                M3U8_PROXY_PATH if line.startswith(SUBTITLES_TEXT) else TS_PROXY_PATH
+                M3U8_PROXY_PATH if line.startswith(MEDIA_TEXT) else TS_PROXY_PATH
             )
             proxied_url = get_proxied_url(full_url, _proxy_url, custom_headers, cookies)
             new_lines.append(line.replace(uri, proxied_url))
@@ -41,7 +44,7 @@ def proxy_m3u8_text(text: str, url: str, custom_headers: dict = {}, cookies: dic
             new_lines.append(line)
             continue
 
-        full_url = line if line.startswith("http") else replace_last_segment(url, line)
+        full_url = urljoin(url, line)
         proxied_url = get_proxied_url(full_url, url_path, custom_headers, cookies)
         new_lines.append(proxied_url)
 

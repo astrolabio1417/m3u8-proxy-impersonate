@@ -18,12 +18,6 @@ def get_filename_from_url(url: str):
     return url.split("/")[-1]
 
 
-def replace_last_segment(url: str, new_value: str):
-    s = url.rstrip("/").split("/")
-    s[-1] = new_value
-    return "/".join(s)
-
-
 def get_origin_from_allowed_origins(host: str):
     try:
         index = ALLOWED_ORIGINS_WO_SCHEME.index(host)
