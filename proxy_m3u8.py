@@ -1,7 +1,6 @@
 import re
-import os
 from fastapi import HTTPException
-from configs import M3U8_PROXY_PATH, TS_PROXY_PATH
+from configs import M3U8_PROXY_PATH, TS_PROXY_PATH, PROXY
 from urllib.parse import urljoin
 from curl_cffi import requests
 from utils import get_proxied_url
@@ -9,12 +8,6 @@ from utils import get_proxied_url
 MEDIA_TEXT = "#EXT-X-MEDIA:"
 KEY_TEXT = "#EXT-X-KEY"
 URL_REGEX = re.compile(r"URI=\"([^\"]*)\"")
-
-proxies = {
-    scheme: url
-    for scheme in ("http", "https")
-    if (url := os.environ.get(f"{scheme.upper()}_PROXY"))
-} or None
 
 
 def proxy_m3u8_text(text: str, url: str, custom_headers: dict = {}, cookies: dict = {}):
@@ -57,7 +50,7 @@ def proxy_m3u8(url: str, custom_headers: dict = {}, cookies={}):
         impersonate="chrome",
         headers=custom_headers,
         cookies=cookies,
-        proxies=proxies,
+        proxy=PROXY,
     )
 
     if not res.ok:

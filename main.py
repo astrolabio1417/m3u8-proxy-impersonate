@@ -10,6 +10,7 @@ from proxy_m3u8 import proxy_m3u8
 from configs import (
     M3U8_PROXY_PATH,
     TS_PROXY_PATH,
+    PROXY,
 )
 from urllib.parse import unquote
 from curl_cffi import requests
@@ -17,7 +18,7 @@ from starlette.background import BackgroundTask
 
 
 app = FastAPI()
-client = requests.AsyncSession()
+client = requests.AsyncSession(proxy=PROXY)
 
 
 @app.middleware("http")
