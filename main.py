@@ -52,7 +52,7 @@ def read_root():
 @app.get(M3U8_PROXY_PATH)
 async def serve_proxy_m3u8(request: Request):
     query = request.query_params
-    url = unquote(query.get("url"))
+    url = query.get("url")
     headers = json.loads(unquote(query.get("headers", "{}")))
     cookies = json.loads(unquote(query.get("cookies", "{}")))
 
@@ -68,7 +68,7 @@ async def serve_proxy_m3u8(request: Request):
 @app.get(TS_PROXY_PATH)
 async def serve_proxy_ts(request: Request):
     query = request.query_params
-    url = unquote(query.get("url"))
+    url = query.get("url")
     headers = json.loads(unquote(query.get("headers", "{}")))
     cookies = json.loads(unquote(query.get("cookies", "{}")))
 
