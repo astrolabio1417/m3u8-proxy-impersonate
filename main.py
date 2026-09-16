@@ -84,7 +84,7 @@ async def serve_proxy_ts(request: Request):
     filter_headers(res.headers)
 
     if not res.ok:
-        res.aclose()
+        await res.aclose()
         raise HTTPException(
             status_code=500, detail=f"Fetch failed with status {res.status_code}"
         )
