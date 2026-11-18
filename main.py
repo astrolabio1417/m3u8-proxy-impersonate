@@ -1,15 +1,16 @@
 import json
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse, Response, JSONResponse
-from .utils import (
+from utils import (
     filter_headers,
     get_filename_from_url,
     get_origin_from_allowed_origins,
 )
-from .proxy_m3u8 import proxy_m3u8
-from .configs import (
+from proxy_m3u8 import proxy_m3u8
+from configs import (
     M3U8_PROXY_PATH,
     TS_PROXY_PATH,
+    PROXY,
 )
 from urllib.parse import unquote
 from curl_cffi import requests
@@ -17,7 +18,7 @@ from starlette.background import BackgroundTask
 
 
 app = FastAPI()
-client = requests.AsyncSession()
+client = requests.AsyncSession(proxy=PROXY)
 
 
 @app.middleware("http")
@@ -51,7 +52,7 @@ def read_root():
 @app.get(M3U8_PROXY_PATH)
 async def serve_proxy_m3u8(request: Request):
     query = request.query_params
-    url = unquote(query.get("url"))
+    url = query.get("url")
     headers = json.loads(unquote(query.get("headers", "{}")))
     cookies = json.loads(unquote(query.get("cookies", "{}")))
 
@@ -67,9 +68,13 @@ async def serve_proxy_m3u8(request: Request):
 @app.get(TS_PROXY_PATH)
 async def serve_proxy_ts(request: Request):
     query = request.query_params
-    url = unquote(query.get("url"))
+    url = query.get("url")
     headers = json.loads(unquote(query.get("headers", "{}")))
     cookies = json.loads(unquote(query.get("cookies", "{}")))
+
+    # forward Range so mp4/progressive files are seekable
+    if request.headers.get("range"):
+        headers.setdefault("Range", request.headers["range"])
 
     # https://www.python-httpx.org/async/
     res = await client.get(
@@ -79,13 +84,14 @@ async def serve_proxy_ts(request: Request):
     filter_headers(res.headers)
 
     if not res.ok:
-        res.aclose()
+        await res.aclose()
         raise HTTPException(
             status_code=500, detail=f"Fetch failed with status {res.status_code}"
         )
 
     return StreamingResponse(
         res.aiter_content(),
+        status_code=res.status_code,
         headers={**res.headers},
         background=BackgroundTask(res.aclose),
     )

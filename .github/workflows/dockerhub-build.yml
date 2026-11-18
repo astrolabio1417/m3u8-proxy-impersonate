@@ -1,40 +1,68 @@
 name: Publish Docker image
-
 on:
     push:
         branches: [main]
-
+env:
+    IMG: ${{ secrets.DOCKERHUB_USERNAME }}/m3u8-proxy-impersonate
 jobs:
-    push_to_registry:
-        name: Push Docker image to Docker Hub
-        runs-on: ubuntu-latest
-        permissions:
-            packages: write
-            contents: read
-
+    build:
+        name: Build ${{ matrix.variant }} ${{ matrix.arch }}
+        strategy:
+            matrix:
+                variant: [app, cloudflared]
+                arch: [amd64, arm64]
+                include:
+                    - arch: amd64
+                      runner: ubuntu-latest
+                    - arch: arm64
+                      runner: ubuntu-24.04-arm
+        runs-on: ${{ matrix.runner }}
         steps:
-            - name: Check out the repo
-              uses: actions/checkout@v4
-
-            - name: Set up QEMU
-              uses: docker/setup-qemu-action@v3
-
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v3
-
-            - name: Login to docker hub
-              uses: docker/login-action@v3
+            - uses: actions/checkout@v4
+            - uses: docker/setup-buildx-action@v3
+            - uses: docker/login-action@v3
               with:
                   username: ${{ secrets.DOCKERHUB_USERNAME }}
                   password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-            - name: Generate Docker tag
-              id: tag
-              run: echo "tag=${{ secrets.DOCKERHUB_USERNAME }}/m3u8-proxy-impersonate:$(date +%Y%m%d%H%M)" >> "$GITHUB_OUTPUT"
-
-            - name: Build and push
+            - name: Build and push by digest
+              id: build
               uses: docker/build-push-action@v6
               with:
-                  push: true
-                  tags: ${{ steps.tag.outputs.tag }}, ${{ secrets.DOCKERHUB_USERNAME }}/m3u8-proxy-impersonate:latest
-                  platforms: linux/amd64,linux/arm64
+                  target: ${{ matrix.variant }}
+                  platforms: linux/${{ matrix.arch }}
+                  outputs: type=image,name=${{ env.IMG }},push-by-digest=true,name-canonical=true,push=true
+            - name: Export digest
+              run: |
+                  mkdir -p digests
+                  digest="${{ steps.build.outputs.digest }}"
+                  touch "digests/${digest#sha256:}"
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: digest-${{ matrix.variant }}-${{ matrix.arch }}
+                  path: digests/*
+                  if-no-files-found: error
+    merge:
+        name: Push ${{ matrix.variant }} manifest
+        needs: build
+        strategy:
+            matrix:
+                variant: [app, cloudflared]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/download-artifact@v4
+              with:
+                  path: digests
+                  pattern: digest-${{ matrix.variant }}-*
+                  merge-multiple: true
+            - uses: docker/setup-buildx-action@v3
+            - uses: docker/login-action@v3
+              with:
+                  username: ${{ secrets.DOCKERHUB_USERNAME }}
+                  password: ${{ secrets.DOCKERHUB_TOKEN }}
+            - name: Create manifest and push
+              run: |
+                  TS=$(date +%Y%m%d%H%M)
+                  # app -> :latest, cloudflared -> :cloudflared-latest
+                  PREFIX=$([ "${{ matrix.variant }}" = cloudflared ] && echo "cloudflared-" || true)
+                  docker buildx imagetools create -t "$IMG:${PREFIX}$TS" -t "$IMG:${PREFIX}latest" \
+                      $(printf "$IMG@sha256:%s " $(ls digests))
