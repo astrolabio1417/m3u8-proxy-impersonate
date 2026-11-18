@@ -8,7 +8,8 @@ if [ "${CLOUDFLARE_TUNNEL:-false}" = "true" ]; then
   if [ -n "$CLOUDFLARE_TOKEN" ]; then
     exec cloudflared tunnel run --token "$CLOUDFLARE_TOKEN" --url "$CLOUDFLARE_TUNNEL_URL"
   fi
-  exec cloudflared tunnel run --url "$CLOUDFLARE_TUNNEL_URL"
+  # no token -> anonymous quick tunnel (trycloudflare.com URL printed in logs)
+  exec cloudflared tunnel --url "$CLOUDFLARE_TUNNEL_URL"
 fi
 
 exec "$@"

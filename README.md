@@ -32,7 +32,12 @@ docker run -p 8000:8000 -e ALLOWED_ORIGINS="http://localhost:8000,http://localho
 
 ### Cloudflare Tunnel
 
-The Docker image includes `cloudflared` so it can start a Cloudflare Tunnel alongside the app.
+A separate image variant bundles `cloudflared` so it can start a Cloudflare Tunnel alongside the app.
+It's published as the `cloudflared-latest` tag, or build it locally with:
+
+```bash
+docker build --target cloudflared -t video-proxy-impersonate .
+```
 
 ```bash
 docker run \

@@ -1,19 +1,21 @@
 name: Publish Docker image
 on:
     push:
-        branches: [main, feature/cloudflared]
+        branches: [main]
 env:
     IMG: ${{ secrets.DOCKERHUB_USERNAME }}/m3u8-proxy-impersonate
 jobs:
     build:
-        name: Build ${{ matrix.arch }}
+        name: Build ${{ matrix.variant }} ${{ matrix.arch }}
         strategy:
             matrix:
+                variant: [app, cloudflared]
+                arch: [amd64, arm64]
                 include:
-                    - runner: ubuntu-latest
-                      arch: amd64
-                    - runner: ubuntu-24.04-arm
-                      arch: arm64
+                    - arch: amd64
+                      runner: ubuntu-latest
+                    - arch: arm64
+                      runner: ubuntu-24.04-arm
         runs-on: ${{ matrix.runner }}
         steps:
             - uses: actions/checkout@v4
@@ -26,6 +28,7 @@ jobs:
               id: build
               uses: docker/build-push-action@v6
               with:
+                  target: ${{ matrix.variant }}
                   platforms: linux/${{ matrix.arch }}
                   outputs: type=image,name=${{ env.IMG }},push-by-digest=true,name-canonical=true,push=true
             - name: Export digest
@@ -35,18 +38,21 @@ jobs:
                   touch "digests/${digest#sha256:}"
             - uses: actions/upload-artifact@v4
               with:
-                  name: digest-${{ matrix.arch }}
+                  name: digest-${{ matrix.variant }}-${{ matrix.arch }}
                   path: digests/*
                   if-no-files-found: error
     merge:
-        name: Push manifest
+        name: Push ${{ matrix.variant }} manifest
         needs: build
+        strategy:
+            matrix:
+                variant: [app, cloudflared]
         runs-on: ubuntu-latest
         steps:
             - uses: actions/download-artifact@v4
               with:
                   path: digests
-                  pattern: digest-*
+                  pattern: digest-${{ matrix.variant }}-*
                   merge-multiple: true
             - uses: docker/setup-buildx-action@v3
             - uses: docker/login-action@v3
@@ -56,10 +62,7 @@ jobs:
             - name: Create manifest and push
               run: |
                   TS=$(date +%Y%m%d%H%M)
-                  case "${{ github.ref_name }}" in
-                      main) PREFIX="" ;;
-                      feature/cloudflared) PREFIX="cloudflared-" ;;
-                      *) PREFIX="${{ github.ref_name }}-" ;;
-                  esac
+                  # app -> :latest, cloudflared -> :cloudflared-latest
+                  PREFIX=$([ "${{ matrix.variant }}" = cloudflared ] && echo "cloudflared-" || true)
                   docker buildx imagetools create -t "$IMG:${PREFIX}$TS" -t "$IMG:${PREFIX}latest" \
                       $(printf "$IMG@sha256:%s " $(ls digests))
